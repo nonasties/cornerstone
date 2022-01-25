@@ -1,11 +1,127 @@
 <!DOCTYPE html>
 <html class="no-js" lang="{{ locale_name }}">
-    <head>
-        <title>{{ head.title }}</title>
-        {{{ resourceHints }}}
-        {{{ head.meta_tags }}}
-        {{{ head.config }}}
-        {{#block "head"}} {{/block}}
+    <head>  
+        {{!-- crossorigin="anonymous"
+            This allows us to see cross origin script exceptions
+            Only use it in link/script if they require it and the following header is present in the response:
+            access-control-allow-origin: *
+            Note the JS attribute is called crossOrigin
+        --}}
+
+        {{!-- ****** Globaly Static Resources ****** --}}
+        {{!-- Possible to cache at a site wide level. Rarely change and are the same on every page and could request resources --}}
+
+        {{!-- 
+            Native lazy-loading with Lazysizes as a fallback
+            Loads Lazysizes only if required
+            Works bast with my modified responsive-img.html file
+            Must be placed first inside the head section so that it's execution is not blocked
+            Can Remove the 'Load Lazysizes' code already in this file as it is done here
+            Can Remove the theme-bundle.head_async.js script as it only contained lazysizes which is now dynamically loaded if required
+            May want to find a better source for the lazysizes script? Directly from the BC CDN would reduce a connection delay
+            CSS files still delay building the DOM. So on page lazy-loading images only start loading once the CSS has loaded.
+        --}}
+        <script>
+        !function(w,d){           
+            var native = 'loading' in HTMLImageElement.prototype;
+
+            var canGoNative = function(n) {
+                {{!-- return false; --}}{{!-- to disable the switch to native lazy-loading --}}
+                if (!native) return false;
+                if (n.tagName !== 'IMG') return false; {{!-- only deal with img tags --}}
+                if (n.sizes) return true; {{!-- have sizes so can do it --}}
+                if (!n.dataset.srcset) return true; {{!--  no srcset so only can be one size --}}
+                return !n.dataset.srcset.includes(','); {{!-- only one entry is safe --}}
+            }
+
+            var loadLazySizes = function () {
+                if(!w.lazySizesConfig) {
+                    w.lazySizesConfig = w.lazySizesConfig || {};
+                    w.lazySizesConfig.loadMode = 1;
+                    var s = d.createElement('script');
+                    s.crossOrigin="anonymous"; {{!-- so can see its errors --}}
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js'; {{!-- Add this to the BC CDN --}}
+                    d.getElementsByTagName('head')[0].appendChild(s);
+                }
+            }
+
+            var goNative = function (n) {
+                {{!-- These are for backwards compatibility with the old responsive-img.html --}}
+                if(!n.loading) n.loading = "lazy";
+                {{#if theme_settings.lazyload_mode '===' 'lazyload+lqip'}}
+                if (!n.classList.contains('responsive-img')) {
+                    if (n.srcset) { n.style.cssText += "background-image: url('" + n.srcset + "');" };
+                }
+                {{/if }}
+                {{!-- END: These are for backwards compatibility --}}
+                if (n.dataset.src) n.src = n.dataset.src;                                    
+                if (n.dataset.srcset) n.srcset = n.dataset.srcset;
+                if (n.dataset.sizes && n.dataset.sizes !== 'auto') n.sizes = n.dataset.sizes;
+                n.classList.remove('lazyload');
+                n.classList.add('lazyloading');
+                n.onload=function(){n.classList.add('lazyloaded');n.classList.remove('lazyloading')};
+            }
+            
+            var processNode = function (n) {
+                if (n.classList.contains('lazyload')) {
+                    if (canGoNative(n)) {
+                        goNative(n);
+                    } else {
+                        loadLazySizes();
+                        if (!native) o.disconnect();
+                    }
+                }
+                else if (n.tagName === 'IMG'&&!n.classList.contains('normalloading')) {
+                    n.classList.add('normalloading')
+                    n.onload=function(){n.classList.add('normalloaded');n.classList.remove('normalloading')};
+                }
+            }
+
+            var o = new MutationObserver(function(l) {
+                l.forEach(function(m) {
+                    m.addedNodes.forEach(function(n) {
+                        if (n.nodeType === 1 ) {  
+                            processNode(n);
+                            n.querySelectorAll('.lazyload,img').forEach(function(e){processNode(e)});
+                        }                         
+                    })
+                })
+            });
+            o.observe(d.documentElement,{subtree: true,childList:true});
+        }(window,document)
+        </script>
+
+        {{!-- CSS based LQIP support
+            My modified responsive-img.html supports LQIP by using CSS background-image
+            This CSS is needed to make the LQIP image match the positioning of the real image 
+        --}}
+        <style>          
+            img.placeholder-lqip {
+                background-repeat: no-repeat;
+                background-size: contain;
+                background-position: center;
+            }
+            img.placeholder-lqip.normalloaded, img.placeholder-lqip.lazyloaded {
+                background-image: none !important;
+            }
+        </style>
+
+        {{!-- Header logo sizing
+            This stops a Layout Shift. Set to the the size of your logo image
+        <style>.header-logo-image {width: 250px; height: 100px;}</style> 
+        --}}
+        {{!-- Header logo preload --}}
+        {{#if settings.store_logo.image}}
+        {{#if theme_settings.logo_size '===' 'original'}}
+        <link rel="preload" href="{{getImage settings.store_logo.image 'logo_size'}}" as="image" importance="high">
+        {{else}}
+        <link rel="preload" href="{{getImage settings.store_logo.image 'logo_size'}}" imagesrcset="{{getImageSrcset1x2x settings.store_logo.image theme_settings.logo_size}}" as="image" importance="high">
+        {{/if}}
+        {{/if}}
+
+        {{!--  {{{ resourceHints }}} --}}
+        <link rel="preconnect" href="https://fonts.gstatic.com"  crossorigin="anonymous">
+        <link rel="dns-prefetch" href="https://fonts.gstatic.com"  crossorigin="anonymous">
 
         <link href="{{ head.favicon }}" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,30 +132,265 @@
         </script>
 
         {{> components/common/polyfill-script }}
-        <script>window.consentManagerTranslations = `{{{langJson 'consent_manager'}}}`;</script>
+ 
 
-        {{!-- Load Lazysizes script ASAP so images will appear --}}
+        {{!-- 
+            NOT USING - seems to make no difference
+            Change the webfont.js code up to but not including the getFontsCollection line to be async by replacing it with this 
+            Make sure you list the correct fonts so that they load early
+            https://github.com/typekit/webfontloader
+        --}}
+        {{!-- 
+        <link rel="preload" href="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous" as="script">
         <script>
-            {{!-- Only load visible elements until the onload event fires, after which preload nearby elements. --}}
-            window.lazySizesConfig = window.lazySizesConfig || {};
-            window.lazySizesConfig.loadMode = 1;
+            WebFontConfig = {
+                        custom: {
+                            families: ['Roboto:n4', 'Volkhov:n4', 'Montserrat:n5', 'Source Sans Pro']
+                        },
+                        classes: false
+                    };
+        
+            (function(d) {
+                var wf = d.createElement('script'), s = d.scripts[0];
+                wf.crossOrigin="anonymous";
+                wf.src = 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js';
+                wf.async = true;
+                s.parentNode.insertBefore(wf, s);
+            })(document);
         </script>
-        <script async src="{{cdn 'assets/dist/theme-bundle.head_async.js'}}"></script>
-
-        <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js"></script>
-
+        --}}
+        {{!--  
+            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests
+            The fonts will then load after webfont.js is loaded instead of after the css files are loaded.
+            https://github.com/typekit/webfontloader
+            You can also include variants to preload
+            https://github.com/typekit/webfontloader#custom
+            https://github.com/typekit/fvd#values
+        --}}
+        <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous"></script>
         <script>
-            WebFont.load({
-                custom: {
-                    families: ['Karla', 'Roboto', 'Source Sans Pro']
-                },
-                classes: false
-            });
+                WebFont.load({
+                    custom: {
+                        families: ['Roboto:n4', 'Volkhov:n4','Montserrat:n5', 'Source Sans Pro']
+                    },
+                    classes: false
+                });
         </script>
+        {{!-- 
+            NOT USING - too hard to determine which urls to load.
+            Preload web fonts we know are used. On fast connections fonts can be the slowest bit. Does not seem to make much difference on slower connections.
+            This also stops flicker.
+            Not a very reliable way to do this as the real font URLs may change or the store may change what fonts they use.
+            example...
+        --}}
+        {{!--
+        <link rel="preload" href="https://fonts.gstatic.com/s/roboto/v29/KFOmCnqEu92Fr1Mu4mxK.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v12/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+        --}}
 
         {{ getFontsCollection }}
         {{{stylesheet '/assets/css/theme.css'}}}
 
+        {{!-- Get this loading as soon as possible --}}
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
+        {{!-- Not sure how chunking works, but you could potentially preload them
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.chunk.1.js'}}" crossorigin="anonymous" as="script">
+        --}}
+
+        {{!-- Preload specific urls in the footer scripts --}}
+        {{#eachIndex (split footer.scripts '"')}}
+        {{#startsWith "https://cdn11.bigcommerce.com/shared/js/csrf-protection-header-" item}}
+        <link rel="preload" href="{{item}}" as="script">
+        {{/startsWith}}
+        {{#startsWith "https://cdn11.bigcommerce.com/shared/js/datatags-" item}}
+        <link rel="preload" href="{{item}}" as="script">
+        {{/startsWith}}
+        {{/eachIndex}}
+
+        {{!-- 
+            If you use Google Optimize a preload will help reduce flicker
+            Tag Rocket loads it async with importance set to high 
+        --}}
+        {{!--
+        <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" as="script">
+        --}}
+
+        {{!-- Other preloads for scripts that are important for display but are not initially requested --}}
+
+        {{!-- no crossorigin as required response header is missing --}}
+        {{!--
+        <link rel="preload" href="https://classyschema.org/2_13/faq_video_howto_unicode.min.js" as="script">
+        --}}
+
+        {{!-- Pre-connecting
+            Place late in head script so are the last requests to be considered. 
+            Only add what is used and is requested later on 
+            These are browser hits. The browser will only apply them when it has time
+            https://web.dev/preconnect-and-dns-prefetch/
+        --}}
+
+        {{!-- BigCommerce Google Analytics Enhanced Ecommerce --}}  
+        {{!-- 
+        <link rel="preconnect" href="https://www.google-analytics.com">
+        <link rel="dns-prefetch" href="https://www.google-analytics.com">
+        --}}
+
+        {{!-- 
+            if we have certain BigCommerce widgets (Hero Banner, Carousel, Product, Product Set) they use external scripts. 
+            Note that the code for these widgets runs really late as it is dynamically loading the scripts from within the body of the page.   
+            Which means the content of the widgets takes some time to show.
+            A preload on pages you know use one of these widgets would be better, but the URLs may unfortunately change on you!
+            Having the widget add its own preload would work better.
+        --}}
+        {{!--
+        <link rel="preconnect" href="https://microapps.bigcommerce.com">
+        <link rel="dns-prefetch" href="https://microapps.bigcommerce.com">
+        --}}
+
+        {{!-- BigCommerce Recaptcha --}}
+        {{!--       
+        <link rel="preconnect" href="https://www.google.com">
+        <link rel="dns-prefetch" href="https://www.google.com"> 
+
+        <link rel="preconnect" href="https://www.gstatic.com">
+        <link rel="dns-prefetch" href="https://www.gstatic.com">
+        --}}
+
+        {{!-- Google gtag --}}
+        {{!--            
+        <link rel="preconnect" href="https://www.googletagmanager.com">
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+        --}}
+
+        {{!-- Google Ads --}}
+        {{!--               
+        <link rel="preconnect" href="https://www.googleadservices.com">
+        <link rel="dns-prefetch" href="https://www.googleadservices.com">
+        
+        <link rel="preconnect" href="https://googleads.g.doubleclick.net">
+        <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net">
+        
+        <link rel="preconnect" href="https://pagead2.googlesyndication.com">
+        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+        --}}
+
+        {{!-- Facebook Ads --}}
+        {{!--         
+        <link rel="preconnect" href="https://connect.facebook.net">
+        <link rel="dns-prefetch" href="https://connect.facebook.net">
+        
+        <link rel="preconnect" href="https://www.facebook.com">
+        <link rel="dns-prefetch" href="https://www.facebook.com">
+        --}}
+
+        {{!-- Pinterest Ads --}}
+        {{!--               
+        <link rel="preconnect" href="https://s.pinimg.com">
+        <link rel="dns-prefetch" href="https://s.pinimg.com">
+        
+        <link rel="preconnect" href="https://ct.pinterest.com">
+        <link rel="dns-prefetch" href="https://ct.pinterest.com">
+        
+        <link rel="preconnect" href="https://www.pinterest.com">
+        <link rel="dns-prefetch" href="https://www.pinterest.com">
+        --}}
+
+        {{!-- Bing Ads --}}
+        {{!--              
+        <link rel="preconnect" href="https://bat.bing.com">
+        <link rel="dns-prefetch" href="https://bat.bing.com">
+        --}}
+
+        {{!-- Tag Rocket Web Vitals --}}
+        {{!--          
+        <link rel="preconnect" href="https://unpkg.com">
+        <link rel="dns-prefetch" href="https://unpkg.com">
+        --}}
+
+        {{!-- Shogun --}}
+        {{!--            
+        <link rel="preconnect" href="https://analytics.getshogun.com">
+        <link rel="dns-prefetch" href="https://analytics.getshogun.com">
+        --}}
+
+        {{!-- Just Uno --}}
+        {{!--        
+        <link rel="preconnect" href="https://cdn.jst.ai">
+        <link rel="dns-prefetch" href="https://cdn.jst.ai">
+        
+        <link rel="preconnect" href="https://my.jst.ai">
+        <link rel="dns-prefetch" href="https://my.jst.ai">
+        
+        <link rel="preconnect" href="https://aly.jst.ai">
+        <link rel="dns-prefetch" href="https://aly.jst.ai">
+        --}}
+
+        {{!-- Twitter Ads --}}
+        {{!--            
+        <link rel="preconnect" href="https://static.ads-twitter.com">
+        <link rel="dns-prefetch" href="https://static.ads-twitter.com">
+        
+        <link rel="preconnect" href="https://analytics.twitter.com">
+        <link rel="dns-prefetch" href="https://analytics.twitter.com">
+        
+        <link rel="preconnect" href="https://t.co">
+        <link rel="dns-prefetch" href="https://t.co">
+        --}}
+
+        {{!-- Yahoo Ads --}}
+        {{!--          
+        <link rel="preconnect" href="https://s.yimg.com">
+        <link rel="dns-prefetch" href="https://s.yimg.com">
+        
+        <link rel="preconnect" href="https://sp.analytics.yahoo.com">
+        <link rel="dns-prefetch" href="https://sp.analytics.yahoo.com">
+        --}}
+
+        {{!-- Taboola --}}
+        {{!--       
+        <link rel="preconnect" href="https://cdn.taboola.com">
+        <link rel="dns-prefetch" href="https://cdn.taboola.com">
+        --}}
+
+        {{!-- TikTok --}}
+        {{!--          
+        <link rel="preconnect" href="https://analytics.tiktok.com">
+        <link rel="dns-prefetch" href="https://analytics.tiktok.com">
+        --}}
+
+        {{!-- Criteo --}}
+        {{!--           
+        <link rel="preconnect" href="https://dynamic.criteo.com">
+        <link rel="dns-prefetch" href="https://dynamic.criteo.com">
+        
+        <link rel="preconnect" href="https://static.criteo.net">
+        <link rel="dns-prefetch" href="https://static.criteo.net">
+        
+        <link rel="preconnect" href="https://sslwidget.criteo.com">
+        <link rel="dns-prefetch" href="https://sslwidget.criteo.com">
+        
+        <link rel="preconnect" href="https://gum.criteo.com">
+        <link rel="dns-prefetch" href="https://gum.criteo.com">
+        --}}
+
+        {{!-- ****** Page Static Resources ****** --}}
+        {{!-- Possible to cache at a page level. Rarely change but are page specific and could request resources --}}
+
+        {{{ head.config }}}
+
+        {{!-- This here assumes no users of this block add dynamic content --}}
+        {{!-- checkout.html and order-confirmation.html do, in fact they also pulls in head.scripts --}}
+        {{#block "head"}} {{/block}}
+
+        {{!-- ****** Page Variable Resources ****** --}}
+        {{!-- Frequently change so should not be cached. Or are tags that would not trigger any network requests. --}}
+
+        <title>{{ head.title }}</title>
+        {{{ head.meta_tags }}}
+
+        <script>window.consentManagerTranslations = `{{{langJson 'consent_manager'}}}`;</script>
+
+        {{!-- This includes BCs GA and Facebook code site verification code a CSRF token (that can't be cached) and the custom scripts --}}
         {{{head.scripts}}}
 
         {{~inject 'zoomSize' theme_settings.zoom_size}}
@@ -58,6 +409,7 @@
         {{~inject 'carouselArrowAndDotAriaLabel' (lang 'carousel.arrow_and_dot_aria_label')}}
         {{~inject 'carouselActiveDotAriaLabel' (lang 'carousel.active_dot_aria_label')}}
         {{~inject 'carouselContentAnnounceMessage' (lang 'carousel.content_announce_message')}}
+
     </head>
     <body>
         <svg data-src="{{cdn 'img/icon-sprite.svg'}}" class="icons-svg-sprite"></svg>
@@ -67,12 +419,35 @@
         {{> components/common/footer }}
 
         <script>window.__webpack_public_path__ = "{{cdn 'assets/dist/'}}";</script>
-        <script src="{{cdn 'assets/dist/theme-bundle.main.js'}}"></script>
-        <script>
-            {{!-- Exported in app.js --}}
-            window.stencilBootstrap("{{page_type}}", {{jsContext}}).load();
-        </script>
 
+        {{!-- Stop theme-bundle.main.js from blocking
+            Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
+            Needs to be after all uses of ~inject so jsContext is populated
+            This supports async/defer and still works on IE
+        --}}
+        <script>
+            !function(d){
+                var done = false;
+                var script=d.createElement('script');
+                script.src="{{cdn 'assets/dist/theme-bundle.main.js'}}";
+                script.crossOrigin="anonymous";
+                script.async = true;
+                script.defer = true;
+                script.onload=script.onreadystatechange=function() {
+                    if(!done) {
+                        var readyState = script.readyState;
+                        if(!readyState || readyState=='loaded' || readyState=='complete'){
+                            done = true;
+                            {{!-- Exported in app.js --}}
+                            window.stencilBootstrap("{{page_type}}", {{jsContext}}).load();
+                        }
+                    }
+                }
+                d.head.appendChild(script);
+            }(document)
+        </script>
+        <!-- footer scripts -->
         {{{footer.scripts}}}
+        <!-- footer scripts end -->
     </body>
 </html>

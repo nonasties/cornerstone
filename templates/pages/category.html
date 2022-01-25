@@ -7,6 +7,19 @@ category:
 {{inject "categoryProductsPerPage" theme_settings.categorypage_products_per_page}}
 {{inject "categoryId" category.id}}
 {{#partial "head"}}
+    {{#if category.image}}
+    <link rel="preload" as="image" href="{{getImageSrcset category.image 1x=(concat (first (split theme_settings.zoom_size 'x')) 'w')}}" importance="high">
+    {{/if}}
+    {{#if category.products.[0].image}}
+    <link rel="preload" as="image" href="{{getImageSrcset category.products.[0].image 1x=(concat (first (split theme_settings.productgallery_size 'x')) 'w')}}" importance="high">
+    {{/if}}
+    {{#if category.products.[1].image}}
+    <link rel="preload" as="image" href="{{getImageSrcset category.products.[1].image 1x=(concat (first (split theme_settings.productgallery_size 'x')) 'w')}}" importance="high">
+    {{/if}}
+    {{#if category.products.[2].image}}
+    <link rel="preload" as="image" href="{{getImageSrcset category.products.[2].image 1x=(concat (first (split theme_settings.productgallery_size 'x')) 'w')}}" importance="high">
+    {{/if}}
+
     {{#if pagination.category.previous}}
         <link rel="prev" href="{{pagination.category.previous}}">
     {{/if}}
@@ -21,9 +34,10 @@ category:
 {{#if category.image}}
     {{> components/common/responsive-img
         image=category.image
-        fallback_size=theme_settings.zoom_size
         lazyload=theme_settings.lazyload_mode
+        fallback_size=theme_settings.zoom_size
         class="category-header-image"
+        sizes=(concat (first (split ../theme_settings.zoom_size 'x')) 'px')
     }}
 {{/if}}
 {{#unless theme_settings.hide_category_page_heading }}

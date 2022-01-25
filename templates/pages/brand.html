@@ -5,6 +5,13 @@ brand:
 ---
 {{inject "brandProductsPerPage" theme_settings.brandpage_products_per_page}}
 {{#partial "head"}}
+    {{#if brand.image}}
+    <link rel="preload" as="image" href="{{getImageSrcset brand.image 1x=(concat (first (split theme_settings.thumb_size 'x')) 'w')}}" importance="high">
+    {{else}}
+    {{#if brand.products.[0].image}}
+    <link rel="preload" as="image" href="{{getImageSrcset brand.products.[0].image 1x='320px'}}" importance="high">
+    {{/if}}
+    {{/if}}
     {{#if pagination.brand.previous}}
         <link rel="prev" href="{{pagination.brand.previous}}">
     {{/if}}
@@ -20,7 +27,9 @@ brand:
         {{> components/common/responsive-img
             image=brand.image
             fallback_size=theme_settings.thumb_size
-            lazyload='disabled'
+            loading='eager'
+            importance='high'
+            sizes=(concat (first (split theme_settings.thumb_size 'x')) 'px')
         }}
     </div>
 {{/if}}

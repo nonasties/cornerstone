@@ -51,13 +51,26 @@
                 {{/if}}
             {{/or}}
         {{/if}}
+        {{#if @first}}
         {{> components/common/responsive-img
             image=image
             class="listItem-image"
             fallback_size=theme_settings.productgallery_size
-            lazyload=theme_settings.lazyload_mode
+            loading='eager'
+            importance='high'
             default_image=theme_settings.default_image_product
+            sizes=(concat (first (split theme_settings.productgallery_size 'x')) 'px')
         }}
+        {{else}}
+        {{> components/common/responsive-img
+            image=image
+            class="listItem-image"
+            lazyload=theme_settings.lazyload_mode
+            fallback_size=theme_settings.productgallery_size
+            default_image=theme_settings.default_image_product
+            sizes=(concat (first (split theme_settings.productgallery_size 'x')) 'px')
+        }}
+        {{/if}}
         </a>
         {{#unless hide_product_quick_view}}
             {{#if theme_settings.show_product_quick_view}}

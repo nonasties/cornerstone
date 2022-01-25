@@ -19,9 +19,10 @@ brands:
                                 {{> components/common/responsive-img
                                     image=image
                                     class="card-image"
-                                    fallback_size=../theme_settings.brand_size
                                     lazyload=../theme_settings.lazyload_mode
+                                    fallback_size=theme_settings.brand_size
                                     default_image=../theme_settings.default_image_brand
+                                    sizes=(concat (first (split ../theme_settings.brand_size 'x')) 'px')
                                 }}
                             </div>
                         </a>

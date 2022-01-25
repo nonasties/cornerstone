@@ -26,7 +26,9 @@
                             {{> components/common/responsive-img
                                 image=image
                                 class="productOptions-list-item-image"
-                                lazyload='lazyload+lqip'
+                                fallback_size='80w'
+                                loading='lazy'
+                                sizes='80px'
                             }}
                         </figure>
                     {{/if}}

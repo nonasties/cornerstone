@@ -66,13 +66,27 @@
            {{#if settings.data_tag_enabled}} data-event-type="product-click" {{/if}}
         >
             <div class="card-img-container">
+                {{#and (if position '<=' 3) (if loading_eager_first '===' 'true') }}
                 {{> components/common/responsive-img
                     image=image
                     class="card-image"
-                    fallback_size=theme_settings.productgallery_size
                     lazyload=theme_settings.lazyload_mode
+                    fallback_size=theme_settings.productgallery_size
                     default_image=theme_settings.default_image_product
+                    loading='eager'
+                    importance='high'
+                    sizes=(concat (first (split theme_settings.productgallery_size 'x')) 'px')
                 }}
+                {{else}}
+                {{> components/common/responsive-img
+                    image=image
+                    class="card-image"
+                    lazyload=theme_settings.lazyload_mode
+                    fallback_size=theme_settings.productgallery_size
+                    default_image=theme_settings.default_image_product
+                    sizes=(concat (first (split theme_settings.productgallery_size 'x')) 'px')
+                }}
+                {{/and}}
             </div>
         </a>
 
