@@ -7,7 +7,7 @@
             <div class="account-product-figure">
                 {{> components/common/responsive-img
                     image=product.image
-                    fallback_size=theme_settings.productthumb_size
+                    fallback_size=../theme_settings.productthumb_size
                     lazyload=../theme_settings.lazyload_mode
                     sizes=(concat (first (split ../theme_settings.productthumb_size 'x')) 'px')
                 }}

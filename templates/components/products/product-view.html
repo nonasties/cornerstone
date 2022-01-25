@@ -57,8 +57,7 @@
                     default_image=theme_settings.default_image_product
                     otherAttributes="data-main-image"
                     sizes=(concat (first (split theme_settings.product_size 'x')) 'px')
-                    xloading='auto'
-                    ximportance='high'
+                    loading='auto'
                 }}
                 {{!-- Remove the surrounding a-element if there is no main image. --}}
                 {{#if product.main_image}}
@@ -87,7 +86,8 @@
                     {{> components/common/responsive-img
                         image=this
                         lazyload=../theme_settings.lazyload_mode
-                        fallback_size=theme_settings.productview_thumb_size
+                        placeholder='auto'
+                        fallback_size=../theme_settings.productview_thumb_size
                         sizes=(concat (first (split ../theme_settings.productview_thumb_size 'x')) 'px')
                     }}
                     </a>

@@ -22,10 +22,10 @@
                         {{> components/common/responsive-img
                             image=image
                             class="cart-item-image"
-                            fallback_size=theme_settings.productthumb_size
-                            lazyload="lazyload"
+                            fallback_size=../theme_settings.productthumb_size
+                            loading='lazy'
                             default_image=../theme_settings.default_image_product
-                            sizes=(concat (first (split theme_settings.productthumb_size 'x')) 'px')
+                            sizes=(concat (first (split ../theme_settings.productthumb_size 'x')) 'px')
                         }}
                     {{/if}}
                 </td>

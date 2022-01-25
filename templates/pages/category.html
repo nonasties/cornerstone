@@ -35,9 +35,11 @@ category:
     {{> components/common/responsive-img
         image=category.image
         lazyload=theme_settings.lazyload_mode
+        loading='eager'
+        importance='high'
         fallback_size=theme_settings.zoom_size
         class="category-header-image"
-        sizes=(concat (first (split ../theme_settings.zoom_size 'x')) 'px')
+        sizes=(concat (first (split theme_settings.zoom_size 'x')) 'px')
     }}
 {{/if}}
 {{#unless theme_settings.hide_category_page_heading }}
