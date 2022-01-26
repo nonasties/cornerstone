@@ -106,9 +106,9 @@
             }
         </style>
 
-        {{!-- Header logo sizing
-            This stops a Layout Shift. Set to the the size of your logo image
-        <style>.header-logo-image {width: 250px; height: 100px;}</style> 
+        {{!-- Header logo sizing. This stops a Layout Shift. Set to the the size of your logo image --}}
+        {{!--
+        <style>.header-logo-image {width: 134px; height: 100px;}</style> 
         --}}
         {{!-- Header logo preload --}}
         {{#if settings.store_logo.image}}
@@ -384,6 +384,8 @@
 
         {{!-- ****** Page Variable Resources ****** --}}
         {{!-- Frequently change so should not be cached. Or are tags that would not trigger any network requests. --}}
+
+        <!-- Hole Punch -->
 
         <title>{{ head.title }}</title>
         {{{ head.meta_tags }}}
