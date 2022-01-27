@@ -107,9 +107,8 @@
         </style>
 
         {{!-- Header logo sizing. This stops a Layout Shift. Set to the the size of your logo image --}}
-        {{!--
         <style>.header-logo-image {width: 134px; height: 100px;}</style> 
-        --}}
+
         {{!-- Header logo preload --}}
         {{#if settings.store_logo.image}}
         {{#if theme_settings.logo_size '===' 'original'}}
@@ -140,7 +139,7 @@
             Make sure you list the correct fonts so that they load early
             https://github.com/typekit/webfontloader
         --}}
-        {{!-- 
+      
         <link rel="preload" href="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous" as="script">
         <script>
             WebFontConfig = {
@@ -158,7 +157,7 @@
                 s.parentNode.insertBefore(wf, s);
             })(document);
         </script>
-        --}}
+
         {{!--  
             Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests
             The fonts will then load after webfont.js is loaded instead of after the css files are loaded.
@@ -167,6 +166,7 @@
             https://github.com/typekit/webfontloader#custom
             https://github.com/typekit/fvd#values
         --}}
+        {{!--  
         <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous"></script>
         <script>
                 WebFont.load({
@@ -176,6 +176,7 @@
                     classes: false
                 });
         </script>
+           --}}
         {{!-- 
             NOT USING - too hard to determine which urls to load.
             Preload web fonts we know are used. On fast connections fonts can be the slowest bit. Does not seem to make much difference on slower connections.
