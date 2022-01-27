@@ -106,8 +106,8 @@
             }
         </style>
 
-        {{!-- Header logo sizing. This stops a Layout Shift. Set to the the size of your logo image --}}
-        <style>.header-logo-image {width: 134px; height: 100px;}</style> 
+        {{!-- Header logo sizing. This reduces the chance of a layout shift if the logo is large and it stops it being reported in Lighthouse. Set to the true size of your logo image --}}
+        {{!-- <style>.header-logo-image {width: 134px; height: 100px;}</style>  --}}
 
         {{!-- Header logo preload --}}
         {{#if settings.store_logo.image}}
@@ -134,10 +134,14 @@
  
 
         {{!-- 
-            NOT USING - seems to make no difference
+            seems to make no difference apart from removes it from the Lighthouse errors.
             Change the webfont.js code up to but not including the getFontsCollection line to be async by replacing it with this 
-            Make sure you list the correct fonts so that they load early
+            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests.
+            The fonts will then load after webfont.js is loaded instead of after the css files are loaded.
             https://github.com/typekit/webfontloader
+            You can also include variants to preload
+            https://github.com/typekit/webfontloader#custom
+            https://github.com/typekit/fvd#values
         --}}
       
         <link rel="preload" href="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous" as="script">
@@ -158,47 +162,30 @@
             })(document);
         </script>
 
-        {{!--  
-            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests
-            The fonts will then load after webfont.js is loaded instead of after the css files are loaded.
-            https://github.com/typekit/webfontloader
-            You can also include variants to preload
-            https://github.com/typekit/webfontloader#custom
-            https://github.com/typekit/fvd#values
-        --}}
-        {{!--  
-        <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous"></script>
-        <script>
-                WebFont.load({
-                    custom: {
-                        families: ['Roboto:n4', 'Volkhov:n4','Montserrat:n5', 'Source Sans Pro']
-                    },
-                    classes: false
-                });
-        </script>
-           --}}
-        {{!-- 
-            NOT USING - too hard to determine which urls to load.
-            Preload web fonts we know are used. On fast connections fonts can be the slowest bit. Does not seem to make much difference on slower connections.
-            This also stops flicker.
-            Not a very reliable way to do this as the real font URLs may change or the store may change what fonts they use.
-            example...
-        --}}
-        {{!--
-        <link rel="preload" href="https://fonts.gstatic.com/s/roboto/v29/KFOmCnqEu92Fr1Mu4mxK.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v12/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-        --}}
+        {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
+        {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
+         {{ getFontsCollection }} --}}
+ 
 
-        {{ getFontsCollection }}
+        {{!-- 
+        Ideal would be to inline everything that does the main layout for all pages and async load the rest.
+        I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the home page and inline it. It was still loading the whole CSS but it is async so not blocking
+        however the CSS chosen caused other pages to flicker
+        Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
+        Test tools indicate the file is not well compressed.
+        --}}
         {{{stylesheet '/assets/css/theme.css'}}}
 
-        {{!-- Get this loading as soon as possible --}}
+        {{!-- Get this loading as soon as possible. Test tools indicate this is not well minified --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
-        {{!-- Not sure how chunking works, but you could potentially preload them
+        {{!-- Not sure how chunking works, but you could potentially preload them...
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.chunk.1.js'}}" crossorigin="anonymous" as="script">
         --}}
 
-        {{!-- Preload specific urls in the footer scripts --}}
+        {{!-- 
+            Preload specific urls in the footer scripts.
+            This is a hack. it would be better for the system to provide the preload stuff for us 
+        --}}
         {{#eachIndex (split footer.scripts '"')}}
         {{#startsWith "https://cdn11.bigcommerce.com/shared/js/csrf-protection-header-" item}}
         <link rel="preload" href="{{item}}" as="script">
@@ -216,9 +203,9 @@
         <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" as="script">
         --}}
 
-        {{!-- Other preloads for scripts that are important for display but are not initially requested --}}
+        {{!-- Add other preloads for scripts that are important for display but are not initially requested --}}
 
-        {{!-- no crossorigin as required response header is missing --}}
+        {{!-- no crossorigin here as required response header is missing until I flusg its CloudFlare cache --}}
         {{!--
         <link rel="preload" href="https://classyschema.org/2_13/faq_video_howto_unicode.min.js" as="script">
         --}}
