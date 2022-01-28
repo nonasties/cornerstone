@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html class="no-js" lang="{{ locale_name }}">
     <head>  
-        {{!-- crossorigin="anonymous"
+        {{!-- 
+            crossorigin="anonymous"
             This allows us to see cross origin script exceptions
             Only use it in link/script if they require it and the following header is present in the response:
             access-control-allow-origin: *
@@ -142,29 +143,27 @@
             You can also include variants to preload
             https://github.com/typekit/webfontloader#custom
             https://github.com/typekit/fvd#values
-        --}}
-      
-        <link rel="preload" href="https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js" crossorigin="anonymous" as="script">
-        <script>
-            WebFontConfig = {
-                        custom: {
-                            families: ['Roboto:n4', 'Volkhov:n4', 'Montserrat:n5', 'Source Sans Pro']
-                        },
-                        classes: false
-                    };
-        
-            (function(d) {
-                var wf = d.createElement('script'), s = d.scripts[0];
-                wf.crossOrigin="anonymous";
-                wf.src = 'https://ajax.googleapis.com/ajax/libs/webfont/1.6.26/webfont.js';
-                wf.async = true;
-                s.parentNode.insertBefore(wf, s);
-            })(document);
-        </script>
+        }}
+
+        {{!--             
+            Using this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
+            the preloaded fonts are in assets/js/common/font.js
+            However, this means the fonts css file is still the bit that slows down font loading. Maybe it can also be put in the CDN?
+            But then it's the CDN connection we will be waiting on. So no true gain with all this as all connections are requested at the same time.
+
+            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests.
+            The fonts will then load after webfont.js and the fonts css is loaded instead of after all the css files are loaded. The main css file is big and slow
+            https://github.com/typekit/webfontloader
+            You can also include variants to preload
+            https://github.com/typekit/webfontloader#custom
+            https://github.com/typekit/fvd#values
+        --}} 
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
+        <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
 
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
-         {{ getFontsCollection }} --}}
+         {{ getFontsCollection }} 
  
 
         {{!-- 
@@ -178,7 +177,7 @@
 
         {{!-- Get this loading as soon as possible. Test tools indicate this is not well minified --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
-        {{!-- Not sure how chunking works, but you could potentially preload them...
+        {{!-- Not sure how chunking works, but you could potentially preload them. seems different pages use different chunks?...
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.chunk.1.js'}}" crossorigin="anonymous" as="script">
         --}}
 
