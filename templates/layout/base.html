@@ -160,10 +160,12 @@
         --}} 
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
         <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
+         
 
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
-         {{ getFontsCollection }} 
+        <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400|Volkhov:400|Montserrat:500&display=block" rel="stylesheet"> 
+        {{!-- {{ getFontsCollection }} --}}
  
 
         {{!-- 
@@ -172,8 +174,13 @@
         however the CSS chosen caused other pages to flicker
         Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
         Test tools indicate the file is not well compressed.
+        Removing this can get green for PSI mobile CWVs. So optimising it would help for that score.
         --}}
+        {{#if page_type '===' 'category'}}
+        {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet';"}}}
+        {{else}}
         {{{stylesheet '/assets/css/theme.css'}}}
+        {{/if}}
 
         {{!-- Get this loading as soon as possible. Test tools indicate this is not well minified --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
