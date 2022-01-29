@@ -69,6 +69,7 @@
                 {{!-- 
                     theme_settings.productgallery_size should be used and set to about 270px width for optimal performance
                     instead I have hard coded it
+                    I don't lazy load the first 3 images as thay can be visible on a desktop
                 --}}
                 {{#and (if position '<=' 3) (if loading_eager_first '===' 'true') }}
                 {{> components/common/responsive-img

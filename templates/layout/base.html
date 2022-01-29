@@ -166,7 +166,7 @@
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
         {{!-- when inlining css the web fonts cause flicker, setting display to block reduces that, async this file causes even more flicker --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400|Volkhov:400|Montserrat:500&display=block" rel="stylesheet">  --}}
-        {{!-- even better, inline this file --}}
+        {{!-- even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present --}}
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -291,12 +291,13 @@
 
         {{!-- 
         Ideal would be to inline everything that does the main layout for all pages and async load the rest.
-        I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the home page and inline it. It was still loading the whole CSS but it is async so not blocking
+        I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inline it. It was still loading the whole CSS but it is async so not blocking
         however the CSS chosen caused other pages to flicker
         Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
         Test tools indicate the file is not well compressed.
         Removing this can get green for PSI mobile CWVs. So optimising it would help for that score.
-        Currentyl I have category pages inlining essential css via category.html and the main CSS is async loaded.
+        Currently I have category pages inlining essential css via category.html and the main CSS is async loaded.
+        When generating the inline code make sure to remove the fonts at the start and the logo sizing class .header-logo-image
         --}}
         {{#if page_type '===' 'category'}}
         {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet';"}}}
