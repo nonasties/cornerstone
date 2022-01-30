@@ -159,26 +159,26 @@
             https://github.com/typekit/fvd#values
         --}} 
         <script>
-            // risky as webfontloading script may fail to run and remove the class
-               document.getElementsByTagName('html')[0].classList.add("wf-loading"); // set it early using js so we can blank the page
+            
+            document.getElementsByTagName('html')[0].classList.add("wf-loading"); // set it early using js so we can blank the page
 
-                // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
+            // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
+            document.getElementsByTagName('html')[0].classList.add("wf-loading-test"); 
+            setTimeout(function () {
+                document.getElementsByTagName('html')[0].classList.remove("wf-loading-test")
+            }, 5000);
+
+            // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
+
+            // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
+            var regex = /family=([^&]*)/gm;
+
+            window.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
         </script>
         <style>
-            .wf-loading body {
+            .wf-loading.wf-loading-test body {
                 visibility: hidden;
             }
-
-            /*
-            .wf-loading h1 {
-               
-                background-color: red;
-            }
-            .wf-active .navPages-list {
-              
-                background-color: green;
-            }
-            */
         </style>
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
         <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
@@ -191,6 +191,7 @@
         {{!-- 
             even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present
         --}}
+
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -310,7 +311,7 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         </style>
-        {{!-- {{ getFontsCollection }} --}}
+
  
 
         {{!-- 
@@ -338,6 +339,7 @@
         {{!-- 
             Preload specific urls in the footer scripts.
             This is a hack. it would be better for the system to provide the preload stuff for us 
+            data tags expects analytics to be alreay loaded when it runs. This hack means it beats it to it.
         --}}
         {{#eachIndex (split footer.scripts '"')}}
         {{#startsWith "https://cdn11.bigcommerce.com/shared/js/csrf-protection-header-" item}}
@@ -544,8 +546,10 @@
         <script>window.consentManagerTranslations = `{{{langJson 'consent_manager'}}}`;</script>
 
         {{!-- This includes BCs GA and Facebook code site verification code a CSRF token (that can't be cached) and the custom scripts --}}
+        <!-- head.scripts -->
         {{{head.scripts}}}
 
+        <!-- inject -->
         {{~inject 'zoomSize' theme_settings.zoom_size}}
         {{~inject 'productSize' theme_settings.product_size}}
         {{~inject 'genericError' (lang 'common.generic_error')}}
@@ -562,7 +566,7 @@
         {{~inject 'carouselArrowAndDotAriaLabel' (lang 'carousel.arrow_and_dot_aria_label')}}
         {{~inject 'carouselActiveDotAriaLabel' (lang 'carousel.active_dot_aria_label')}}
         {{~inject 'carouselContentAnnounceMessage' (lang 'carousel.content_announce_message')}}
-
+        <!-- end head -->
     </head>
     <body>
         <svg data-src="{{cdn 'img/icon-sprite.svg'}}" class="icons-svg-sprite"></svg>
