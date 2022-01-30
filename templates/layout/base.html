@@ -347,8 +347,10 @@
         {{/eachIndex}}
 
         {{!-- 
-            If you use Google Optimize a preload will help reduce flicker
-            Tag Rocket loads it async with importance set to high 
+            segment.io
+            If you use Google Optimize a preload will help reduce flicker when it changes the page
+            Tag Rocket loads it async with importance set to high and adds a preload 
+            However this code starts that preload in the segment.io page cache making it load far earlier 
         --}}
         {{!--
         <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" as="script">
