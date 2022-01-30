@@ -186,12 +186,8 @@
 
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
-        {{!-- when inlining css the web fonts cause flicker, setting display to block reduces that, async this file causes even more flicker --}}
-        {{!-- <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400|Volkhov:400|Montserrat:500&display=block" rel="stylesheet">  --}}
-        {{!-- 
-            even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present
-        --}}
-
+        {{!-- even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present  --}}
+        {{!-- {{ getFontsCollection }} --}}
         <style>
             /* cyrillic-ext */
             @font-face {
