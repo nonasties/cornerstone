@@ -158,36 +158,20 @@
             https://github.com/typekit/webfontloader#custom
             https://github.com/typekit/fvd#values
         --}} 
-        <script>
-            
-            document.getElementsByTagName('html')[0].classList.add("wf-loading"); // set it early using js so we can blank the page
-
-            // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
-            document.getElementsByTagName('html')[0].classList.add("wf-loading-test"); 
-            setTimeout(function () {
-                document.getElementsByTagName('html')[0].classList.remove("wf-loading-test")
-            }, 5000);
-
-            // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
-
-            // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
-            var regex = /family=([^&]*)/gm;
-
-            window.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
-        </script>
-        <style>
-            .wf-loading.wf-loading-test body {
-                visibility: hidden;
-            }
-        </style>
-        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
-        <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
+     
          
 
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
         {{!-- even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present  --}}
         {{!-- {{ getFontsCollection }} --}}
+
+        {{!-- Preload the fonts we know are going to be used. I can't always get webfotloader to preload when it runs. does not play well with webfontloader --}}
+        {{!-- 
+        <link rel="preload" href="https://fonts.gstatic.com/s/montserrat/v21/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Hw5aXo.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v15/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin>
+        --}}
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -307,7 +291,46 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         </style>
+           <script>
+            !function (w, d) {
+                var cl = d.getElementsByTagName('html')[0].classList;
+                cl.add("wf-loading"); // set it early using js so we can blank the page
 
+                // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
+                cl.add("wf-loading-timeout"); 
+                setTimeout(function () {
+                    cl.remove("wf-loading-timeout")
+                }, 5000);
+
+                // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
+
+                // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
+                var regex = /family=([^&]*)/gm;
+
+                //w.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
+
+                var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
+
+                w.WebFontConfig = {
+                    custom: {
+                        families: families,
+                        text: 'abcdefghijklmnopqrstuvwxyz!'
+                    },
+                    //  loading: function () { console.log('loading'); },
+                    //  active: function () { console.log('active'); },
+                    //   fontloading: function (familyName, fvd) { console.log('fontloading', familyName, fvd); },
+                    //   fontactive: function (familyName, fvd) { console.log('fontactive', familyName, fvd); },
+                    classes: true
+                };
+            }(window,document)
+        </script>
+        <style>
+            .wf-loading.wf-loading-timeout body {
+                visibility: hidden;
+            }
+        </style>
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
+        <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
  
 
         {{!-- 
