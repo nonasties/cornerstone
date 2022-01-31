@@ -147,32 +147,16 @@
         }}
 
         {{!--             
-            Using this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
-            the preloaded fonts are in assets/js/common/font.js
-            However, this means the fonts css file is still the bit that slows down font loading. Maybe it can also be put in the CDN?
-            But then it's the CDN connection we will be waiting on. So no true gain with all this as all connections are requested at the same time.
-
-            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests.
-            The fonts will then load after webfont.js and the fonts css is loaded instead of after all the css files are loaded. The main css file is big and slow
+            Based on this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
             https://github.com/typekit/webfontloader
-            You can also include variants to preload
             https://github.com/typekit/webfontloader#custom
             https://github.com/typekit/fvd#values
         --}} 
-     
-         
 
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
-        {{!-- even better, inline the file... This also causes even earlier preloads as the html is parsed and the CSS is already present  --}}
+        {{!-- Inlined the file. This also causes even earlier preloads as the html is parsed and the CSS is already present  --}}
         {{!-- {{ getFontsCollection }} --}}
-
-        {{!-- Preload the fonts we know are going to be used. I can't always get webfotloader to preload when it runs. does not play well with webfontloader --}}
-        {{!-- 
-        <link rel="preload" href="https://fonts.gstatic.com/s/montserrat/v21/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Hw5aXo.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v15/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin>
-        --}}
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -293,22 +277,20 @@
             }
         </style>
            <script>
-                !function (w, d) {
+                !function(w,d){
                     var cl = d.getElementsByTagName('html')[0].classList;
                     cl.add("wf-loading"); // set it early using js so we can blank the page
 
                     // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
-                    cl.add("wf-loading-timeout");
+                    cl.add("wf-loading-settimeout");
                     setTimeout(function () {
-                        cl.remove("wf-loading-timeout")
+                        cl.remove("wf-loading-settimeout")
                     }, 5000);
 
                     // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
 
                     // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
                     var regex = /family=([^&]*)/gm;
-
-                    //w.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
 
                     var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
 
@@ -317,75 +299,34 @@
                             families: families,
                             text: 'abcdefghijklmnopqrstuvwxyz!'
                         },
-                        //  loading: function () { console.log('loading'); },
-                        //  active: function () { console.log('active'); },
-                        //   fontloading: function (familyName, fvd) { console.log('fontloading', familyName, fvd); },
-                        //   fontactive: function (familyName, fvd) { console.log('fontactive', familyName, fvd); },
-                        classes: true
+                        events: false
                     };
-                }(window, document)
+                }(window,document)
         </script>
         <style>
-            .wf-loading.wf-loading-timeout body {
+            .wf-loading.wf-loading-settimeout body {
                 visibility: hidden;
             }
         </style>
-        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" as="script">
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high" as="script">
         <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
  
 
         {{!-- 
-        Ideal would be to inline everything that does the main layout for all pages and async load the rest.
-        I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inline it. It was still loading the whole CSS but it is async so not blocking
-        however the CSS chosen caused other pages to flicker
-        Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
-        Test tools indicate the file is not well compressed.
-        Removing this can get green for PSI mobile CWVs. So optimising it would help for that score.
-        Currently I have category pages inlining essential css via category.html and the main CSS is async loaded.
-        When generating the inline code make sure to remove the fonts at the start and the logo sizing class .header-logo-image
+            Ideal would be to inline everything that does the main layout for all pages and async load the rest.
+            I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inline it. It was still loading the whole CSS but it is async so not blocking
+            however the CSS chosen caused other pages to flicker
+            Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
+            Test tools indicate the file is not well compressed.
+            Removing this can get green for PSI mobile CWVs. So optimising it would help for that score.
+            Currently I have category pages inlining essential css via category.html and the main CSS is async loaded.
+            When generating the inline code make sure to remove the fonts at the start and the logo sizing class .header-logo-image
         --}}
         {{#if page_type '===' 'category'}}
-        {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet';"}}}
+        {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" importance="high" onload="this.onload=null;this.rel='stylesheet';"}}}
         {{else}}
-        {{{stylesheet '/assets/css/theme.css'}}}
+        {{{stylesheet '/assets/css/theme.css' importance="high"}}}
         {{/if}}
-
-        {{!-- 
-            Stop theme-bundle.main.js from blocking
-            Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
-            Needs to be after all uses of ~inject so jsContext is populated
-            This supports async/defer and still works on IE
-        --}}
-        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
-        <script>
-            !function(w,d){
-                w.onThemeBundleMainLoaded = [];
-
-                var done = false;
-                var script = d.createElement('script');
-                script.src = "{{cdn 'assets/dist/theme-bundle.main.js'}}";
-                script.crossOrigin = "anonymous";
-                script.async = true;
-                script.onload = script.onreadystatechange = function () {
-                    if (!done) {
-                        var readyState = script.readyState;
-                        if (!readyState || readyState == 'loaded' || readyState == 'complete') {
-                            done = true;
-                            var a = w.onThemeBundleMainLoaded;                                
-                            w.onThemeBundleMainLoaded = { push: function (func) { func() } };
-                            a.forEach(function (func) { func() });
-                        }
-                    }
-                }
-                d.head.appendChild(script);
-            }(window,document)
-        </script>
-
-
-
-        {{!-- Not sure how chunking works, but you could potentially preload them. seems different pages use different chunks?...
-        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.chunk.1.js'}}" crossorigin="anonymous" as="script">
-        --}}
 
         {{!-- 
             Preload specific urls in the footer scripts.
@@ -423,13 +364,10 @@
             Only add what is used and is requested later on 
             These are browser hits. The browser will only apply them when it has time
             https://web.dev/preconnect-and-dns-prefetch/
+
+            Tag Rocket preconnects to all the relevant domains
         --}}
 
-        {{!-- BigCommerce Google Analytics Enhanced Ecommerce --}}  
-        {{!-- 
-        <link rel="preconnect" href="https://www.google-analytics.com">
-        <link rel="dns-prefetch" href="https://www.google-analytics.com">
-        --}}
 
         {{!-- 
             if we have certain BigCommerce widgets (Hero Banner, Carousel, Product, Product Set) they use external scripts. 
@@ -452,57 +390,6 @@
         <link rel="dns-prefetch" href="https://www.gstatic.com">
         --}}
 
-        {{!-- Google gtag --}}
-        {{!--            
-        <link rel="preconnect" href="https://www.googletagmanager.com">
-        <link rel="dns-prefetch" href="https://www.googletagmanager.com">
-        --}}
-
-        {{!-- Google Ads --}}
-        {{!--               
-        <link rel="preconnect" href="https://www.googleadservices.com">
-        <link rel="dns-prefetch" href="https://www.googleadservices.com">
-        
-        <link rel="preconnect" href="https://googleads.g.doubleclick.net">
-        <link rel="dns-prefetch" href="https://googleads.g.doubleclick.net">
-        
-        <link rel="preconnect" href="https://pagead2.googlesyndication.com">
-        <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
-        --}}
-
-        {{!-- Facebook Ads --}}
-        {{!--         
-        <link rel="preconnect" href="https://connect.facebook.net">
-        <link rel="dns-prefetch" href="https://connect.facebook.net">
-        
-        <link rel="preconnect" href="https://www.facebook.com">
-        <link rel="dns-prefetch" href="https://www.facebook.com">
-        --}}
-
-        {{!-- Pinterest Ads --}}
-        {{!--               
-        <link rel="preconnect" href="https://s.pinimg.com">
-        <link rel="dns-prefetch" href="https://s.pinimg.com">
-        
-        <link rel="preconnect" href="https://ct.pinterest.com">
-        <link rel="dns-prefetch" href="https://ct.pinterest.com">
-        
-        <link rel="preconnect" href="https://www.pinterest.com">
-        <link rel="dns-prefetch" href="https://www.pinterest.com">
-        --}}
-
-        {{!-- Bing Ads --}}
-        {{!--              
-        <link rel="preconnect" href="https://bat.bing.com">
-        <link rel="dns-prefetch" href="https://bat.bing.com">
-        --}}
-
-        {{!-- Tag Rocket Web Vitals --}}
-        {{!--          
-        <link rel="preconnect" href="https://unpkg.com">
-        <link rel="dns-prefetch" href="https://unpkg.com">
-        --}}
-
         {{!-- Shogun --}}
         {{!--            
         <link rel="preconnect" href="https://analytics.getshogun.com">
@@ -519,27 +406,6 @@
         
         <link rel="preconnect" href="https://aly.jst.ai">
         <link rel="dns-prefetch" href="https://aly.jst.ai">
-        --}}
-
-        {{!-- Twitter Ads --}}
-        {{!--            
-        <link rel="preconnect" href="https://static.ads-twitter.com">
-        <link rel="dns-prefetch" href="https://static.ads-twitter.com">
-        
-        <link rel="preconnect" href="https://analytics.twitter.com">
-        <link rel="dns-prefetch" href="https://analytics.twitter.com">
-        
-        <link rel="preconnect" href="https://t.co">
-        <link rel="dns-prefetch" href="https://t.co">
-        --}}
-
-        {{!-- Yahoo Ads --}}
-        {{!--          
-        <link rel="preconnect" href="https://s.yimg.com">
-        <link rel="dns-prefetch" href="https://s.yimg.com">
-        
-        <link rel="preconnect" href="https://sp.analytics.yahoo.com">
-        <link rel="dns-prefetch" href="https://sp.analytics.yahoo.com">
         --}}
 
         {{!-- Taboola --}}
@@ -600,10 +466,10 @@
 
         {{!-- This includes BCs GA and Facebook code site verification code a CSRF token (that can't be cached) and the custom scripts --}}
         {{!-- BCs GA uses some CPU so may be better delayed a bit so it does not delay LCP --}}
-        <!-- head.scripts -->
+        <!-- head scripts start -->
         {{{head.scripts}}}
+        <!-- head scripts end -->
 
-        <!-- inject -->
         {{~inject 'zoomSize' theme_settings.zoom_size}}
         {{~inject 'productSize' theme_settings.product_size}}
         {{~inject 'genericError' (lang 'common.generic_error')}}
@@ -620,7 +486,6 @@
         {{~inject 'carouselArrowAndDotAriaLabel' (lang 'carousel.arrow_and_dot_aria_label')}}
         {{~inject 'carouselActiveDotAriaLabel' (lang 'carousel.active_dot_aria_label')}}
         {{~inject 'carouselContentAnnounceMessage' (lang 'carousel.content_announce_message')}}
-        <!-- end head -->
     </head>
     <body>
         <svg data-src="{{cdn 'img/icon-sprite.svg'}}" class="icons-svg-sprite"></svg>
@@ -631,14 +496,38 @@
 
         <script>window.__webpack_public_path__ = "{{cdn 'assets/dist/'}}";</script>
 
+        {{!-- 
+            Stop theme-bundle.main.js from blocking
+            Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
+            Needs to be after all uses of ~inject so jsContext is populated
+            This supports async/defer and still works on IE
+
+            I tried a way to move it into the cached head, but unfortunately it depends on head being complete and probably body being mostly done.
+            It would be nice to get some of it in the cached head so it can preload the chunks (that code also requires head).
+        --}}
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
         <script>
-            window.onThemeBundleMainLoaded.push(function(){
-                {{!-- Exported in app.js --}}
-                window.stencilBootstrap("{{page_type}}", {{ jsContext }}).load();
-            });
+            !function(w,d){
+                var done = false;
+                var script = d.createElement('script');
+                script.src = "{{cdn 'assets/dist/theme-bundle.main.js'}}";
+                script.crossOrigin = "anonymous";
+                script.async = true;
+                script.onload = script.onreadystatechange = function () {
+                    if (!done) {
+                        var readyState = script.readyState;
+                        if (!readyState || readyState == 'loaded' || readyState == 'complete') {
+                            done = true;
+                            {{!-- Exported in app.js --}}
+                            window.stencilBootstrap("{{page_type}}", {{ jsContext }}).load();
+                        }
+                    }
+                }
+                d.head.appendChild(script);
+            }(window,document)
         </script>
 
-        <!-- footer scripts -->
+        <!-- footer scripts start -->
         {{{footer.scripts}}}
         <!-- footer scripts end -->
     </body>
