@@ -153,10 +153,17 @@
             https://github.com/typekit/fvd#values
         --}} 
 
-        {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
-        {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
-        {{!-- Inlined the file. This also causes even earlier preloads as the html is parsed and the CSS is already present  --}}
-        {{!-- {{ getFontsCollection }} --}}
+        {{!-- 
+            Inline the file returned by getFontsCollection 
+            This also causes even earlier preloads as the html is parsed and the CSS is already present
+            It also makes the font urls static so we can do things like preloads.
+            May need periodic review to see if the contents of the getFontsCollection url change
+            Will be out of sync if fonts are changed in the page builder
+        --}}
+        {{!-- If you know what fonts will be used in advance, preload them --}} 
+        <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v15/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" href="https://fonts.gstatic.com/s/montserrat/v21/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Hw5aXo.woff2" as="font" type="font/woff2" crossorigin>
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -276,32 +283,36 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         </style>
-           <script>
-                !function(w,d){
-                    var cl = d.getElementsByTagName('html')[0].classList;
-                    cl.add("wf-loading"); // set it early using js so we can blank the page
+        {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
+        {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
 
-                    // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
-                    cl.add("wf-loading-settimeout");
-                    setTimeout(function () {
-                        cl.remove("wf-loading-settimeout")
-                    }, 5000);
+        {{!-- webfontloader --}}
+        <script>
+            !function(w,d){
+                var cl = d.getElementsByTagName('html')[0].classList;
+                cl.add("wf-loading"); // set it early using js so we can blank the page
 
-                    // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
+                // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
+                cl.add("wf-loading-settimeout");
+                setTimeout(function () {
+                    cl.remove("wf-loading-settimeout")
+                }, 5000);
 
-                    // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
-                    var regex = /family=([^&]*)/gm;
+                // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
 
-                    var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
+                // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
+                var regex = /family=([^&]*)/gm;
 
-                    w.WebFontConfig = {
-                        custom: {
-                            families: families,
-                            text: 'abcdefghijklmnopqrstuvwxyz!'
-                        },
-                        events: false
-                    };
-                }(window,document)
+                var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
+
+                w.WebFontConfig = {
+                    custom: {
+                        families: families,
+                        text: 'abcdefghijklmnopqrstuvwxyz!'
+                    },
+                    events: false
+                };
+            }(window,document)
         </script>
         <style>
             .wf-loading.wf-loading-settimeout body {
@@ -311,7 +322,6 @@
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high" as="script">
         <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
  
-
         {{!-- 
             Ideal would be to inline everything that does the main layout for all pages and async load the rest.
             I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inline it. It was still loading the whole CSS but it is async so not blocking
@@ -327,6 +337,9 @@
         {{else}}
         {{{stylesheet '/assets/css/theme.css' importance="high"}}}
         {{/if}}
+
+         {{!-- preload theme-bundle.main.js as it is in the footer and out of the cache --}}
+        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
 
         {{!-- 
             Preload specific urls in the footer scripts.
@@ -408,33 +421,6 @@
         <link rel="dns-prefetch" href="https://aly.jst.ai">
         --}}
 
-        {{!-- Taboola --}}
-        {{!--       
-        <link rel="preconnect" href="https://cdn.taboola.com">
-        <link rel="dns-prefetch" href="https://cdn.taboola.com">
-        --}}
-
-        {{!-- TikTok --}}
-        {{!--          
-        <link rel="preconnect" href="https://analytics.tiktok.com">
-        <link rel="dns-prefetch" href="https://analytics.tiktok.com">
-        --}}
-
-        {{!-- Criteo --}}
-        {{!--           
-        <link rel="preconnect" href="https://dynamic.criteo.com">
-        <link rel="dns-prefetch" href="https://dynamic.criteo.com">
-        
-        <link rel="preconnect" href="https://static.criteo.net">
-        <link rel="dns-prefetch" href="https://static.criteo.net">
-        
-        <link rel="preconnect" href="https://sslwidget.criteo.com">
-        <link rel="dns-prefetch" href="https://sslwidget.criteo.com">
-        
-        <link rel="preconnect" href="https://gum.criteo.com">
-        <link rel="dns-prefetch" href="https://gum.criteo.com">
-        --}}
-
         {{!-- ****** Page Static Resources ****** --}}
         {{!-- Possible to cache at a page level. Rarely change but are page specific and could request resources --}}
 
@@ -505,7 +491,6 @@
             I tried a way to move it into the cached head, but unfortunately it depends on head being complete and probably body being mostly done.
             It would be nice to get some of it in the cached head so it can preload the chunks (that code also requires head).
         --}}
-        <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
         <script>
             !function(w,d){
                 var done = false;
