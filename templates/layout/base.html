@@ -23,76 +23,77 @@
             CSS files still delay building the DOM. So on page lazy-loading images only start loading once the CSS has loaded.
         --}}
         <script>
-        !function(w,d){           
-            var native = 'loading' in HTMLImageElement.prototype;
+            !function(w,d){           
+                var native = 'loading' in HTMLImageElement.prototype;
 
-            var canGoNative = function(n) {
-                {{!-- return false; --}}{{!-- to disable the switch to native lazy-loading --}}
-                if (!native) return false;
-                if (n.tagName !== 'IMG') return false; {{!-- only deal with img tags --}}
-                if (n.sizes) return true; {{!-- have sizes so can do it --}}
-                if (!n.dataset.srcset) return true; {{!--  no srcset so only can be one size --}}
-                return !n.dataset.srcset.includes(','); {{!-- only one entry is safe --}}
-            }
-
-            var loadLazySizes = function () {
-                if(!w.lazySizesConfig) {
-                    w.lazySizesConfig = w.lazySizesConfig || {};
-                    w.lazySizesConfig.loadMode = 1;
-                    var s = d.createElement('script');
-                    s.crossOrigin="anonymous"; {{!-- so can see its errors --}}
-                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js'; {{!-- Add this to the BC CDN --}}
-                    d.getElementsByTagName('head')[0].appendChild(s);
+                var canGoNative = function(n) {
+                    {{!-- return false; --}}{{!-- to disable the switch to native lazy-loading --}}
+                    if (!native) return false;
+                    if (n.tagName !== 'IMG') return false; {{!-- only deal with img tags --}}
+                    if (n.sizes) return true; {{!-- have sizes so can do it --}}
+                    if (!n.dataset.srcset) return true; {{!--  no srcset so only can be one size --}}
+                    return !n.dataset.srcset.includes(','); {{!-- only one entry is safe --}}
                 }
-            }
 
-            var goNative = function (n) {
-                {{!-- These are for backwards compatibility with the old responsive-img.html --}}
-                if(!n.loading) n.loading = "lazy";
-                {{#if theme_settings.lazyload_mode '===' 'lazyload+lqip'}}
-                if (!n.classList.contains('responsive-img')) {
-                    if (n.srcset) { n.style.cssText += "background-image: url('" + n.srcset + "');" };
-                }
-                {{/if }}
-                {{!-- END: These are for backwards compatibility --}}
-                if (n.dataset.src) n.src = n.dataset.src;                                    
-                if (n.dataset.srcset) n.srcset = n.dataset.srcset;
-                if (n.dataset.sizes && n.dataset.sizes !== 'auto') n.sizes = n.dataset.sizes;
-                n.classList.remove('lazyload');
-                n.classList.add('lazyloading');
-                n.onload=function(){n.classList.add('lazyloaded');n.classList.remove('lazyloading')};
-            }
-            
-            var processNode = function (n) {
-                if (n.classList.contains('lazyload')) {
-                    if (canGoNative(n)) {
-                        goNative(n);
-                    } else {
-                        loadLazySizes();
-                        if (!native) o.disconnect();
+                var loadLazySizes = function () {
+                    if(!w.lazySizesConfig) {
+                        w.lazySizesConfig = w.lazySizesConfig || {};
+                        w.lazySizesConfig.loadMode = 1;
+                        var s = d.createElement('script');
+                        s.crossOrigin="anonymous"; {{!-- so can see its errors --}}
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js'; {{!-- Add this to the BC CDN --}}
+                        d.getElementsByTagName('head')[0].appendChild(s);
                     }
                 }
-                else if (n.tagName === 'IMG'&&!n.classList.contains('normalloading')) {
-                    n.classList.add('normalloading')
-                    n.onload=function(){n.classList.add('normalloaded');n.classList.remove('normalloading')};
-                }
-            }
 
-            var o = new MutationObserver(function(l) {
-                l.forEach(function(m) {
-                    m.addedNodes.forEach(function(n) {
-                        if (n.nodeType === 1 ) {  
-                            processNode(n);
-                            n.querySelectorAll('.lazyload,img').forEach(function(e){processNode(e)});
-                        }                         
+                var goNative = function (n) {
+                    {{!-- These are for backwards compatibility with the old responsive - img.html --}}
+                    if (!n.loading) n.loading = "lazy";
+                    {{#if theme_settings.lazyload_mode '===' 'lazyload+lqip' }}
+                    if (!n.classList.contains('responsive-img')) {
+                        if (n.srcset) { n.style.cssText += "background-image: url('" + n.srcset + "');" };
+                    }
+                    {{/if}}
+                    {{!-- END: These are for backwards compatibility --}}
+                    if (n.dataset.src) n.src = n.dataset.src;
+                    if (n.dataset.srcset) n.srcset = n.dataset.srcset;
+                    if (n.dataset.sizes && n.dataset.sizes !== 'auto') n.sizes = n.dataset.sizes;
+                    n.classList.remove('lazyload');
+                    n.classList.add('lazyloading');
+                    n.onload = function () { n.classList.add('lazyloaded'); n.classList.remove('lazyloading') };
+                }
+
+                var processNode = function (n) {
+                    if (n.classList.contains('lazyload')) {
+                        if (canGoNative(n)) {
+                            goNative(n);
+                        } else {
+                            loadLazySizes();
+                            if (!native) o.disconnect();
+                        }
+                    }
+                    else if (n.tagName === 'IMG' && !n.classList.contains('normalloading')) {
+                        n.classList.add('normalloading')
+                        n.onload = function () { n.classList.add('normalloaded'); n.classList.remove('normalloading') };
+                    }
+                }
+
+                var o = new MutationObserver(function (l) {
+                    l.forEach(function (m) {
+                        m.addedNodes.forEach(function (n) {
+                            if (n.nodeType === 1) {
+                                processNode(n);
+                                n.querySelectorAll('.lazyload,img').forEach(function (e) { processNode(e) });
+                            }
+                        })
                     })
-                })
-            });
-            o.observe(d.documentElement,{subtree: true,childList:true});
-        }(window,document)
+                });
+                o.observe(d.documentElement, { subtree: true, childList: true });
+            }(window,document)
         </script>
 
-        {{!-- CSS based LQIP support
+        {{!-- 
+            CSS based LQIP support
             My modified responsive-img.html supports LQIP by using CSS background-image
             This CSS is needed to make the LQIP image match the positioning of the real image 
         --}}
@@ -127,7 +128,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <script>
-            {{!-- Change document class from no-js to js so we can detect this in css --}}
+            {{!-- Change document class from no - js to js so we can detect this in css --}}
             document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
         </script>
 
@@ -292,37 +293,37 @@
             }
         </style>
            <script>
-            !function (w, d) {
-                var cl = d.getElementsByTagName('html')[0].classList;
-                cl.add("wf-loading"); // set it early using js so we can blank the page
+                !function (w, d) {
+                    var cl = d.getElementsByTagName('html')[0].classList;
+                    cl.add("wf-loading"); // set it early using js so we can blank the page
 
-                // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
-                cl.add("wf-loading-timeout"); 
-                setTimeout(function () {
-                    cl.remove("wf-loading-timeout")
-                }, 5000);
+                    // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
+                    cl.add("wf-loading-timeout");
+                    setTimeout(function () {
+                        cl.remove("wf-loading-timeout")
+                    }, 5000);
 
-                // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
+                    // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
 
-                // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
-                var regex = /family=([^&]*)/gm;
+                    // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
+                    var regex = /family=([^&]*)/gm;
 
-                //w.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
+                    //w.webfontloader_families = regex.exec('{{ getFontsCollection }}')[1].split('|');
 
-                var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
+                    var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
 
-                w.WebFontConfig = {
-                    custom: {
-                        families: families,
-                        text: 'abcdefghijklmnopqrstuvwxyz!'
-                    },
-                    //  loading: function () { console.log('loading'); },
-                    //  active: function () { console.log('active'); },
-                    //   fontloading: function (familyName, fvd) { console.log('fontloading', familyName, fvd); },
-                    //   fontactive: function (familyName, fvd) { console.log('fontactive', familyName, fvd); },
-                    classes: true
-                };
-            }(window,document)
+                    w.WebFontConfig = {
+                        custom: {
+                            families: families,
+                            text: 'abcdefghijklmnopqrstuvwxyz!'
+                        },
+                        //  loading: function () { console.log('loading'); },
+                        //  active: function () { console.log('active'); },
+                        //   fontloading: function (familyName, fvd) { console.log('fontloading', familyName, fvd); },
+                        //   fontactive: function (familyName, fvd) { console.log('fontactive', familyName, fvd); },
+                        classes: true
+                    };
+                }(window, document)
         </script>
         <style>
             .wf-loading.wf-loading-timeout body {
@@ -349,8 +350,39 @@
         {{{stylesheet '/assets/css/theme.css'}}}
         {{/if}}
 
-        {{!-- Get this loading as soon as possible. Test tools indicate this is not well minified --}}
+        {{!-- 
+            Stop theme-bundle.main.js from blocking
+            Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
+            Needs to be after all uses of ~inject so jsContext is populated
+            This supports async/defer and still works on IE
+        --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
+        <script>
+            !function(w,d){
+                w.onThemeBundleMainLoaded = [];
+
+                var done = false;
+                var script = d.createElement('script');
+                script.src = "{{cdn 'assets/dist/theme-bundle.main.js'}}";
+                script.crossOrigin = "anonymous";
+                script.async = true;
+                script.onload = script.onreadystatechange = function () {
+                    if (!done) {
+                        var readyState = script.readyState;
+                        if (!readyState || readyState == 'loaded' || readyState == 'complete') {
+                            done = true;
+                            var a = w.onThemeBundleMainLoaded;                                
+                            w.onThemeBundleMainLoaded = { push: function (func) { func() } };
+                            a.forEach(function (func) { func() });
+                        }
+                    }
+                }
+                d.head.appendChild(script);
+            }(window,document)
+        </script>
+
+
+
         {{!-- Not sure how chunking works, but you could potentially preload them. seems different pages use different chunks?...
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.chunk.1.js'}}" crossorigin="anonymous" as="script">
         --}}
@@ -376,7 +408,7 @@
             However this code starts that preload in the segment.io page cache making it load far earlier 
         --}}
         {{!--
-        <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" as="script">
+        <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" importance="high" as="script">
         --}}
 
         {{!-- Add other preloads for scripts that are important for display but are not initially requested --}}
@@ -567,6 +599,7 @@
         <script>window.consentManagerTranslations = `{{{langJson 'consent_manager'}}}`;</script>
 
         {{!-- This includes BCs GA and Facebook code site verification code a CSRF token (that can't be cached) and the custom scripts --}}
+        {{!-- BCs GA uses some CPU so may be better delayed a bit so it does not delay LCP --}}
         <!-- head.scripts -->
         {{{head.scripts}}}
 
@@ -598,31 +631,13 @@
 
         <script>window.__webpack_public_path__ = "{{cdn 'assets/dist/'}}";</script>
 
-        {{!-- Stop theme-bundle.main.js from blocking
-            Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
-            Needs to be after all uses of ~inject so jsContext is populated
-            This supports async/defer and still works on IE
-        --}}
         <script>
-            !function(d){
-                var done = false;
-                var script=d.createElement('script');
-                script.src="{{cdn 'assets/dist/theme-bundle.main.js'}}";
-                script.crossOrigin="anonymous";
-                script.async = true;
-                script.onload=script.onreadystatechange=function() {
-                    if(!done) {
-                        var readyState = script.readyState;
-                        if(!readyState || readyState=='loaded' || readyState=='complete'){
-                            done = true;
-                            {{!-- Exported in app.js --}}
-                            window.stencilBootstrap("{{page_type}}", {{jsContext}}).load();
-                        }
-                    }
-                }
-                d.head.appendChild(script);
-            }(document)
+            window.onThemeBundleMainLoaded.push(function(){
+                {{!-- Exported in app.js --}}
+                window.stencilBootstrap("{{page_type}}", {{ jsContext }}).load();
+            });
         </script>
+
         <!-- footer scripts -->
         {{{footer.scripts}}}
         <!-- footer scripts end -->
