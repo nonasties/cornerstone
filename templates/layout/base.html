@@ -9,30 +9,47 @@
             Note the JS attribute is called crossOrigin
         --}}
 
+        {{!-- 
+            section.io
+            section.io provide a CDN that caches partial pages. Any html in the cache are is returned to the browser very quicky (i.e. sub 100ms)
+            And therefore any resources requested in that cache can be requested very early on in the life of loading a page.
+
+            I've grouped the code into sections to help get the most out of this caching.
+
+            Globaly Static Resources - always the same site wide
+            Page Static Resources - always the same for a page
+            Page Variable Resources - likely to change, like title, meta description, user specific data
+
+            The first two sections are inside the page cache. They have to contain static content as they may be cached for a long time.
+            Edits to code in those sections would require a full flush of the cache. e.g. edits here, edits to partial head sections, updates of the theme (changes URL identifiers)     
+        --}}
+
         {{!-- ****** Globaly Static Resources ****** --}}
-        {{!-- Possible to cache at a site wide level. Rarely change and are the same on every page and could request resources --}}
+        {{!-- 
+            Possible to cache at a site wide level. Rarely change and are the same on every page and could request resources.    
+        --}}
 
         {{!-- 
             Native lazy-loading with Lazysizes as a fallback
             Loads Lazysizes only if required
             Works bast with my modified responsive-img.html file
-            Must be placed first inside the head section so that it's execution is not blocked
-            Can Remove the 'Load Lazysizes' code already in this file as it is done here
-            Can Remove the theme-bundle.head_async.js script as it only contained lazysizes which is now dynamically loaded if required
-            May want to find a better source for the lazysizes script? Directly from the BC CDN would reduce a connection delay
-            CSS files still delay building the DOM. So on page lazy-loading images only start loading once the CSS has loaded.
+            Must be placed early inside the head section so that its execution is not blocked
+            Should Remove the 'Load Lazysizes' code already in this file as it is done here
+            Can remove the theme-bundle.head_async.js script if it only contained lazysizes which is now dynamically loaded if required
+            Render blocking CSS files still delay building the DOM. So on page lazy-loading images only start loading once the render blocking CSS has loaded. In this case, render blocking CSS is inline so no delay
+
+            An improvement would be to add lazysizes.min.js into the theme to avoid a possible connection delay
         --}}
         <script>
             !function(w,d){           
                 var native = 'loading' in HTMLImageElement.prototype;
 
                 var canGoNative = function(n) {
-                    {{!-- return false; --}}{{!-- to disable the switch to native lazy-loading --}}
                     if (!native) return false;
-                    if (n.tagName !== 'IMG') return false; {{!-- only deal with img tags --}}
-                    if (n.sizes) return true; {{!-- have sizes so can do it --}}
-                    if (!n.dataset.srcset) return true; {{!--  no srcset so only can be one size --}}
-                    return !n.dataset.srcset.includes(','); {{!-- only one entry is safe --}}
+                    if (n.tagName !== 'IMG') return false;
+                    if (n.sizes) return true;
+                    if (!n.dataset.srcset) return true;
+                    return !n.dataset.srcset.includes(',');
                 }
 
                 var loadLazySizes = function () {
@@ -40,14 +57,14 @@
                         w.lazySizesConfig = w.lazySizesConfig || {};
                         w.lazySizesConfig.loadMode = 1;
                         var s = d.createElement('script');
-                        s.crossOrigin="anonymous"; {{!-- so can see its errors --}}
-                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js'; {{!-- Add this to the BC CDN --}}
+                        s.crossOrigin="anonymous";
+                        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.1.2/lazysizes.min.js';
                         d.getElementsByTagName('head')[0].appendChild(s);
                     }
                 }
 
                 var goNative = function (n) {
-                    {{!-- These are for backwards compatibility with the old responsive - img.html --}}
+                    {{!-- These are for backwards compatibility with the old responsive-img.html --}}
                     if (!n.loading) n.loading = "lazy";
                     {{#if theme_settings.lazyload_mode '===' 'lazyload+lqip' }}
                     if (!n.classList.contains('responsive-img')) {
@@ -108,9 +125,12 @@
             }
         </style>
 
-        {{!-- Header logo sizing. This reduces the chance of a layout shift if the logo is large and it stops it being reported in Lighthouse. Set to the true size of your logo image --}}
-        <style>.header-logo-image {width: 134px; height: 100px;}</style>
-
+        {{!-- 
+            Header logo sizing. 
+            Sizing the logo image reduces the chance of a layout shift and an issue being reported in Page Speed Insights/Lighthouse.
+            I've added width and height to the logo if not set to use the original unknown size
+            If your logo is not showing correctly then set its exact dimensions in Page Builder->Settings->Header & Footer
+        --}}
         {{!-- Header logo preload --}}
         {{#if settings.store_logo.image}}
         {{#if theme_settings.logo_size '===' 'original'}}
@@ -121,6 +141,7 @@
         {{/if}}
 
         {{!--  {{{ resourceHints }}} --}}
+        {{!--  These are the only ones of the built in resource hints needed. The others are requested instantly so the preconnect makes no difference  --}}
         <link rel="preconnect" href="https://fonts.gstatic.com"  crossorigin="anonymous">
         <link rel="dns-prefetch" href="https://fonts.gstatic.com"  crossorigin="anonymous">
 
@@ -128,39 +149,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <script>
-            {{!-- Change document class from no - js to js so we can detect this in css --}}
+            {{!-- Change document class from no-js to js so we can detect this in css --}}
             document.documentElement.className = document.documentElement.className.replace('no-js', 'js');
         </script>
 
         {{> components/common/polyfill-script }}
  
-
         {{!-- 
-            seems to make no difference apart from removes it from the Lighthouse errors.
-            Change the webfont.js code up to but not including the getFontsCollection line to be async by replacing it with this 
-            Make sure you list the correct fonts so that they load early. The same ones as getFontsCollection requests.
-            The fonts will then load after webfont.js is loaded instead of after the css files are loaded.
-            https://github.com/typekit/webfontloader
-            You can also include variants to preload
-            https://github.com/typekit/webfontloader#custom
-            https://github.com/typekit/fvd#values
-        }}
-
-        {{!--             
-            Based on this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
-            https://github.com/typekit/webfontloader
-            https://github.com/typekit/webfontloader#custom
-            https://github.com/typekit/fvd#values
-        --}} 
-
-        {{!-- 
-            Inline the file returned by getFontsCollection 
-            This also causes even earlier preloads as the html is parsed and the CSS is already present
+            Here we inline the file normally returned by getFontsCollection 
+            This causes earlier font preloads (before webfontloader) as we have removed all render blocking, the html is parsed and the CSS is already present
             It also makes the font urls static so we can do things like preloads.
             May need periodic review to see if the contents of the getFontsCollection url change
             Will be out of sync if fonts are changed in the page builder
+
+            Improvement would be to generate this from the url in getFontsCollection on theme or theme setting updates. Could this be built in?
         --}}
-        {{!-- If you know what fonts will be used in advance, preload them --}} 
+        {{!-- If you know what fonts will be used in advance you can preload them. But make sure this is kept up to date --}} 
         <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
         <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v15/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin>
         <link rel="preload" href="https://fonts.gstatic.com/s/montserrat/v21/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Hw5aXo.woff2" as="font" type="font/woff2" crossorigin>
@@ -283,68 +287,100 @@
                 unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
             }
         </style>
-        {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it really makes no diference --}}
+        {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it makes little difference --}}
         {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
 
         {{!-- webfontloader --}}
+        {{!--             
+            This section is based on this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
+
+            This solution has no render blocking resources, so the page can be rendered as soon as the html is loaded. This causes a problem as the fonts will most likely load after rendering
+            causing layout shifts. My solution is to hide the page until the fonts are loaded or 5 seconds has elapsed. 
+
+            The code sets both .wf-loading and .wf-loading-set-timeout from the start, with CSS to hide the page when both are set.
+            Either webfontloader will remove .wf-loading when the fonts are loaded or our 5 second timeout will remove .wf-loading-set-timeout. And the page will show.
+            This means the page should show as soon as the fonts are loaded and avoid layout shifts, or at 5 seconds as a backup for failure.
+
+            If webfontloader is given a font that is not in the CSS, the .wf-loading is not removed for 5 seconds. I presume it is waiting for the expected CSS. So the familes in webfontloader need to be right.
+            The code extracts the families from getFontsCollection to ensure that. This is a hack. It would be better if BCs system provided the correct list. 
+
+            https://github.com/typekit/webfontloader
+            https://github.com/typekit/webfontloader#custom
+            https://github.com/typekit/fvd#values
+        --}} 
         <script>
             !function(w,d){
-                var cl = d.getElementsByTagName('html')[0].classList;
-                cl.add("wf-loading"); // set it early using js so we can blank the page
+                var cl=d.getElementsByTagName('html')[0].classList;
+                cl.add("wf-loading"); 
 
-                // my backup system. after 5 seconds remove wf-loading-test so that the page becomes visble anyhow
-                cl.add("wf-loading-settimeout");
-                setTimeout(function () {
-                    cl.remove("wf-loading-settimeout")
-                }, 5000);
+                cl.add("wf-loading-set-timeout");
+                setTimeout(function(){cl.remove("wf-loading-set-timeout")},5000);
 
-                // a fancy solution to ensure page does not stay blank: http://anantgarg.com/2016/06/22/typekit-fout-fix/
-
-                // dynamically create the font families required as they have to exactly match the ones in the CSS. If not there is a delay in the removal of wf-loading
                 var regex = /family=([^&]*)/gm;
 
-                var families = regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm, ' ').split('|');
+                var families=regex.exec('{{ getFontsCollection }}')[1].replace(/\+/gm,' ').split('|');
 
                 w.WebFontConfig = {
                     custom: {
                         families: families,
-                        text: 'abcdefghijklmnopqrstuvwxyz!'
+                        text: 'abcdefghijklmnopqrstuvwxyz!' 
                     },
                     events: false
                 };
             }(window,document)
         </script>
         <style>
-            .wf-loading.wf-loading-settimeout body {
+            .wf-loading.wf-loading-set-timeout body {
                 visibility: hidden;
             }
         </style>
+        {{!-- preload + script async is to make sure it still loads at a high priority but non blocking. In the future importance of high will do the same. --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high" as="script">
         <script async defer src="{{cdn 'assets/dist/theme-bundle.font.js'}}" crossorigin="anonymous" importance="high"></script>
  
         {{!-- 
-            Ideal would be to inline everything that does the main layout for all pages and async load the rest.
-            I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inline it. It was still loading the whole CSS but it is async so not blocking
-            however the CSS chosen caused other pages to flicker
-            Screaming Frog has a tool that crawls the site to discover what CSS is used (no user interaction). It indicated 66% was not used
-            Test tools indicate the file is not well compressed.
-            Removing this can get green for PSI mobile CWVs. So optimising it would help for that score.
-            Currently I have category pages inlining essential css via category.html and the main CSS is async loaded.
-            When generating the inline code make sure to remove the fonts at the start and the logo sizing class .header-logo-image
+            Main CSS
+    
+            The recommended solution is to inline everything that does the main layout for a page and async load the rest.
+
+            Categories pages are inlined at the moment. Work is needed to inline other page types.
+
+            This is currently messing up the faceted navigation layout and the footer layout. So need a better solution!
+
+            I used a tool (https://www.corewebvitals.io/tools/critical-css-generator) to work out essential CSS for the category page and inlined it. 
+
+            The inlined css is added via pages/category.html using the head partial so that it is in the pages cache area.
+            The main CSS for category pages is async loaded so it does not render block.
+            When generating the inline code make sure to remove the fonts at the start as they are in the head section already.
+
+            When the main CSS has loaded it removes the inline CSS via its id of inline-css. I found having both caused layout issues.
+
+            I'm sure there is a better way to split the CSS into essential and non essential? 
+
+            If we knew a user has probably a cache of the main CSS file we could skip including the inlined CSS and save a bit of data.
+            
+            main.js plays with a few things including the faceted navigation, and this causes a small layout shift.
+
         --}}
         {{#if page_type '===' 'category'}}
-        {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" importance="high" onload="this.onload=null;this.rel='stylesheet';"}}}
+        {{{stylesheet '/assets/css/theme.css' rel="preload" as="style" importance="high" onload="this.onload=null;this.rel='stylesheet';var e=document.getElementById('inline-css');e.parentNode.removeChild(e);"}}}
         {{else}}
         {{{stylesheet '/assets/css/theme.css' importance="high"}}}
         {{/if}}
 
-         {{!-- preload theme-bundle.main.js as it is in the footer and out of the cache --}}
+        {{!-- The sudden appearance of the scrollbar seemed to cause a layout shift, so I made it show from the start --}}
+        <style>
+            body {
+                overflow: scroll; 
+            }
+        </style>
+
+        {{!-- preload theme-bundle.main.js as it is in the footer (required) and out of the cache --}}
         <link rel="preload" href="{{cdn 'assets/dist/theme-bundle.main.js'}}" crossorigin="anonymous" as="script">
 
         {{!-- 
             Preload specific urls in the footer scripts.
             This is a hack. it would be better for the system to provide the preload stuff for us 
-            data tags expects analytics to be alreay loaded when it runs. This hack means it beats it to it.
         --}}
         {{#eachIndex (split footer.scripts '"')}}
         {{#startsWith "https://cdn11.bigcommerce.com/shared/js/csrf-protection-header-" item}}
@@ -355,21 +391,17 @@
         {{/startsWith}}
         {{/eachIndex}}
 
-        {{!-- 
-            segment.io
-            If you use Google Optimize a preload will help reduce flicker when it changes the page
-            Tag Rocket loads it async with importance set to high and adds a preload 
-            However this code starts that preload in the segment.io page cache making it load far earlier 
+        {{!--        
+            If you use Google Optimize a preload will help reduce flicker when it changes the page  
         --}}
         {{!--
         <link rel="preload" href="https://www.googleoptimize.com/optimize.js?id=OPT-XXXXXXX" crossorigin="anonymous" importance="high" as="script">
         --}}
 
-        {{!-- Add other preloads for scripts that are important for display but are not initially requested --}}
+        {{!-- 
+            You can add other preloads for scripts that are important for display but are not initially requested. e.g. widgets
 
-        {{!-- no crossorigin here as required response header is missing until I flusg its CloudFlare cache --}}
-        {{!--
-        <link rel="preload" href="https://classyschema.org/2_13/faq_video_howto_unicode.min.js" as="script">
+            Add crossorigin if it is used in the real script tag.
         --}}
 
         {{!-- Pre-connecting
@@ -381,13 +413,12 @@
             Tag Rocket preconnects to all the relevant domains
         --}}
 
-
         {{!-- 
-            if we have certain BigCommerce widgets (Hero Banner, Carousel, Product, Product Set) they use external scripts. 
+            If we have certain BigCommerce widgets (Hero Banner, Carousel, Product, Product Set) they use external scripts. 
             Note that the code for these widgets runs really late as it is dynamically loading the scripts from within the body of the page.   
             Which means the content of the widgets takes some time to show.
             A preload on pages you know use one of these widgets would be better, but the URLs may unfortunately change on you!
-            Having the widget add its own preload would work better.
+            Having the widget some how add its own preload would work better.
         --}}
         {{!--
         <link rel="preconnect" href="https://microapps.bigcommerce.com">
@@ -430,9 +461,6 @@
         {{!-- checkout.html and order-confirmation.html do, in fact they also pulls in head.scripts --}}
         {{#block "head"}} {{/block}}
 
-        {{!-- ****** Page Variable Resources ****** --}}
-        {{!-- Frequently change so should not be cached. Or are tags that would not trigger any network requests. --}}
-
         {{!-- 
             This tells section.io where to cache up to.
             We want to make sure section.io do not cache on page types that don't have this line. Their standard blacklist is:
@@ -442,17 +470,19 @@
             these use layout/empty instead of this: invoice.html, checkout.html, order-confirmation.html, maintenance.html
             If we could use </title> as the hole punch then all layouts would be fine.
         --}}
-        <!-- Hole Punch -->
-        <!-- End Tracking Code for analytics_googleanalytics -->
+
+        {{!-- ****** Page Variable Resources ****** --}}
+        {{!-- Frequently change so should not be cached. Or are tags that would not trigger any network requests. --}}
+        {{!-- If you are using section.io set its hole punch to "<title" so caching stops here --}}
 
         <title>{{ head.title }}</title>
         {{{ head.meta_tags }}}
 
         <script>window.consentManagerTranslations = `{{{langJson 'consent_manager'}}}`;</script>
 
-        {{!-- This includes BCs GA and Facebook code site verification code a CSRF token (that can't be cached) and the custom scripts --}}
-        {{!-- BCs GA uses some CPU so may be better delayed a bit so it does not delay LCP --}}
         <!-- head scripts start -->
+        {{!-- This includes BCs GA and Facebook code, site verification code, a CSRF token (that can't be cached) and the head custom scripts --}}
+        {{!-- BCs GA uses some CPU so may be better delayed a bit so it does not delay LCP --}}
         {{{head.scripts}}}
         <!-- head scripts end -->
 
@@ -504,7 +534,7 @@
                         if (!readyState || readyState == 'loaded' || readyState == 'complete') {
                             done = true;
                             {{!-- Exported in app.js --}}
-                            window.stencilBootstrap("{{page_type}}", {{ jsContext }}).load();
+                            w.stencilBootstrap("{{page_type}}", {{ jsContext }}).load();
                         }
                     }
                 }
