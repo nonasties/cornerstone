@@ -163,6 +163,11 @@
             Will be out of sync if fonts are changed in the page builder
 
             Improvement would be to generate this from the url in getFontsCollection on theme or theme setting updates. Could this be built in?
+
+            Feature: check save-data setting, if on stop all web fonts loading. This will save a lot of data for them and improve LCP scores on those devices. 
+            It would be nice to have a stencil setting indicating if save_data is on so we can use handlebars to do the saving on the server side.
+            network connection speed could also be used to limit resources. e.g. if 2g or less don't use web fonts.
+            https://developers.google.com/web/fundamentals/performance/optimizing-content-efficiency/save-data
         --}}
         {{!-- If you know what fonts will be used in advance you can preload them. But make sure this is kept up to date --}} 
         <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
@@ -294,14 +299,16 @@
         {{!--             
             This section is based on this pull request that moves webfont.js into the CDN saving the need to establish a new connection: https://github.com/bigcommerce/cornerstone/pull/2158/files 
 
-            This solution has no render blocking resources, so the page can be rendered as soon as the html is loaded. This causes a problem as the fonts will most likely load after rendering
-            causing layout shifts. My solution is to hide the page until the fonts are loaded or 5 seconds has elapsed. 
+            This solution has no render blocking resources, so the page can be rendered as soon as the html is loaded. This causes a problem as the fonts will most likely load after rendering causing layout shifts. My solution is to hide the page until the fonts are loaded or some time seconds has elapsed. 
 
             The code sets both .wf-loading and .wf-loading-set-timeout from the start, with CSS to hide the page when both are set.
-            Either webfontloader will remove .wf-loading when the fonts are loaded or our 5 second timeout will remove .wf-loading-set-timeout. And the page will show.
-            This means the page should show as soon as the fonts are loaded and avoid layout shifts, or at 5 seconds as a backup for failure.
+            Either webfontloader will remove .wf-loading when the fonts are loaded or our timeout will remove .wf-loading-set-timeout. And the page will show.
+            This means the page should show as soon as the fonts are loaded and avoid layout shifts, or at the allocated timeout.
 
-            If webfontloader is given a font that is not in the CSS, the .wf-loading is not removed for 5 seconds. I presume it is waiting for the expected CSS. So the familes in webfontloader need to be right.
+            The timeout period is designed to happen just before LCP goes from good to needs improvement (2.5 seconds). This means we will try and pass LCP over causing some small layout shifts due to fonts loading.
+            This typically means Lighthouse and Page Speed Insights in mobile mode will not hide the page at all and therefore not delay LCP. While in desktop mode it will hide to reduce font based layout shifts
+
+            If webfontloader is given a font that is not in the CSS, the .wf-loading is not removed for 5 seconds. I presume it is waiting for the expected CSS. So the families in webfontloader need to be right.
             The code extracts the families from getFontsCollection to ensure that. This is a hack. It would be better if BCs system provided the correct list. 
 
             https://github.com/typekit/webfontloader
@@ -313,8 +320,14 @@
                 var cl=d.getElementsByTagName('html')[0].classList;
                 cl.add("wf-loading"); 
 
-                cl.add("wf-loading-set-timeout");
-                setTimeout(function(){cl.remove("wf-loading-set-timeout")},5000);
+                if (performance.now) {
+                    var timeLeft = 2400-performance.now();
+                    console.log('wf-loading-set-timeout '+timeLeft);
+                    if (timeLeft > 0){
+                        cl.add("wf-loading-set-timeout");
+                        setTimeout(function(){cl.remove("wf-loading-set-timeout")},timeLeft);
+                    }
+                }
 
                 var regex = /family=([^&]*)/gm;
 
