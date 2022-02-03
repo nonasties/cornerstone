@@ -529,7 +529,7 @@
             Stop theme-bundle.main.js from blocking
             Replace the theme-bundle.main.js script and stencilBootstrap script after it with this
             Needs to be after all uses of ~inject so jsContext is populated
-            This supports async/defer and still works on IE
+            This supports async and still works on IE
 
             I tried a way to move it into the cached head, but unfortunately it depends on head being complete and probably body being mostly done.
             It would be nice to get some of it in the cached head so it can preload the chunks (that code also requires head).
