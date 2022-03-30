@@ -1,12 +1,12 @@
 {
   "name": "bigcommerce-cornerstone",
   "description": "The BigCommerce reference theme for the Stencil platform",
-  "version": "6.2.0",
+  "version": "6.3.0",
   "private": true,
   "author": "BigCommerce",
   "license": "MIT",
   "dependencies": {
-    "@bigcommerce/stencil-utils": "^6.8.1",
+    "@bigcommerce/stencil-utils": "^6.11.0",
     "cal-sans": "^1.0.1",
     "core-js": "^3.9.0",
     "creditcards": "^3.0.1",
