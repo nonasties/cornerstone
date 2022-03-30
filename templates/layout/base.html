@@ -164,10 +164,6 @@
 
             Improvement would be to generate this from the url in getFontsCollection on theme or theme setting updates. Could this be built in?
         --}}
-        {{!-- If you know what fonts will be used in advance you can preload them. But make sure this is kept up to date --}} 
-        <link rel="preload" href="https://fonts.gstatic.com/s/sourcesanspro/v18/6xK3dSBYKcSV-LCoeQqfX1RYOo3qOK7l.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.gstatic.com/s/volkhov/v15/SlGQmQieoJcKemNecTUEhQ.woff2" as="font" type="font/woff2" crossorigin>
-        <link rel="preload" href="https://fonts.gstatic.com/s/montserrat/v21/JTUHjIg1_i6t8kCHKm4532VJOt5-QNFgpCtZ6Hw5aXo.woff2" as="font" type="font/woff2" crossorigin>
         <style>
             /* cyrillic-ext */
             @font-face {
@@ -288,7 +284,7 @@
             }
         </style>
         {{!-- This could be done instead to stop the testing tools complain about a blocking css file. It is small so it makes little difference --}}
-        {{!-- <link href="https://fonts.googleapis.com/css?family=Roboto:400|Volkhov:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"> --}}
+        <link href="https://fonts.googleapis.com/css?family=Roboto:400|Montserrat:500&display=swap" rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'">
 
         {{!-- webfontloader --}}
         {{!--             
